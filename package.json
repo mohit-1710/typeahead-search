@@ -1,0 +1,15 @@
+{
+  "name": "typeahead-search",
+  "private": true,
+  "packageManager": "pnpm@10.33.0",
+  "scripts": {
+    "infra:up": "docker compose up -d",
+    "infra:down": "docker compose down",
+    "infra:reset": "docker compose down -v",
+    "dev:server": "pnpm --filter @ta/server dev",
+    "dev:web": "pnpm --filter @ta/web dev",
+    "load": "pnpm --filter @ta/server load",
+    "bench": "pnpm --filter @ta/server bench",
+    "typecheck": "pnpm -r typecheck"
+  }
+}
