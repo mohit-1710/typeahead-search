@@ -9,6 +9,10 @@ const int = (key: string, def: number): number => {
   const v = process.env[key];
   return v === undefined ? def : Number.parseInt(v, 10);
 };
+const num = (key: string, def: number): number => {
+  const v = process.env[key];
+  return v === undefined ? def : Number(v);
+};
 const list = (key: string, def: string): string[] =>
   str(key, def)
     .split(",")
@@ -29,4 +33,13 @@ export const config = {
 
   // distributed cache — one Redis per "node", routed by the hash ring
   cacheNodes: list("CACHE_NODES", "localhost:7001,localhost:7002,localhost:7003"),
+
+  ranking: {
+    topK: int("TOP_K", 10),
+    // hybrid = wPop * log1p(count) + wRec * recency
+    wPop: num("W_POP", 1),
+    wRec: num("W_REC", 2),
+    // recency score halves after this many seconds of silence
+    halfLifeSec: num("DECAY_HALFLIFE_SEC", 1800),
+  },
 };

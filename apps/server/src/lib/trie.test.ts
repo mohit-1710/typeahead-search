@@ -58,3 +58,16 @@ test("a brand new query becomes searchable", () => {
     ["golang"],
   );
 });
+
+test("recency mode lifts a hot query above a more popular one", () => {
+  const trie = new CompletionTrie();
+  trie.build([
+    { query: "news", count: 1000 },
+    { query: "newyear", count: 50 },
+  ]);
+  trie.applyIncrements(new Map([["newyear", 80]]), Date.now());
+  // count mode: the bigger all-time number wins
+  assert.equal(trie.getSuggestions("new", 1, "count")[0]?.query, "news");
+  // recency mode: the fresh burst wins
+  assert.equal(trie.getSuggestions("new", 1, "recency")[0]?.query, "newyear");
+});

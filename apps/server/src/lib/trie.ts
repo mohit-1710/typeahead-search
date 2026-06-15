@@ -16,7 +16,8 @@
  * queries that is comfortably in RAM; past ~1M you would cap pools by depth and
  * fall back to a bounded walk for deep prefixes. See docs/DESIGN.md.
  */
-import type { QueryStat, Suggestion } from "../types";
+import type { Mode, QueryStat, Suggestion } from "../types";
+import { decay, scoreFor } from "./ranking";
 
 const POOL = 25; // completions cached per node; must be >= the K we serve
 const MAX_QUERY_LEN = 120; // bound trie depth against pathological input
@@ -66,36 +67,55 @@ export class CompletionTrie {
 
   /**
    * Apply one flush window of aggregated increments. Counts are exact-additive;
-   * brand new queries are inserted into the structure on the fly.
+   * each increment also nudges the recency score (decayed to now first). Brand
+   * new queries are inserted into the structure on the fly.
    */
-  applyIncrements(window: Map<string, number>): void {
+  applyIncrements(window: Map<string, number>, now: number = Date.now()): void {
     for (const [raw, inc] of window) {
       const q = raw.slice(0, MAX_QUERY_LEN);
       if (!q || inc <= 0) continue;
       let s = this.stats.get(q);
       if (!s) {
-        s = { count: 0, recent: 0, ts: Date.now() };
+        s = { count: 0, recent: 0, ts: now };
         this.stats.set(q, s);
       }
       s.count += inc;
+      s.recent = decay(s.recent, (now - s.ts) / 1000) + inc;
+      s.ts = now;
       this.bubble(q);
     }
   }
 
-  /** Top-K completions for a prefix, ranked by all-time count. */
-  getSuggestions(prefix: string, k: number): Suggestion[] {
+  /** Top-K completions for a prefix. `count` = all-time popularity; `recency`
+   *  re-ranks the cached pool by the popularity/recency blend. */
+  getSuggestions(prefix: string, k: number, mode: Mode = "count"): Suggestion[] {
     const p = prefix.slice(0, MAX_QUERY_LEN);
     if (!p) return [];
     const node = this.navigate(p);
     if (!node) return [];
 
-    const out: Suggestion[] = [];
-    for (const q of node.top) {
-      const s = this.stats.get(q);
-      if (s) out.push({ query: q, count: s.count });
-      if (out.length >= k) break;
+    if (mode === "count") {
+      // pool is already sorted by count desc — just take K
+      const out: Suggestion[] = [];
+      for (const q of node.top) {
+        const s = this.stats.get(q);
+        if (s) out.push({ query: q, count: s.count });
+        if (out.length >= k) break;
+      }
+      return out;
     }
-    return out;
+
+    // recency: re-rank the cached pool by the hybrid score, then take K. The pool
+    // is a popularity-ordered superset, so this only re-orders a handful of rows.
+    const now = Date.now();
+    return node.top
+      .map((q) => {
+        const s = this.stats.get(q)!;
+        return { query: q, count: s.count, score: scoreFor(mode, s.count, decay(s.recent, (now - s.ts) / 1000)) };
+      })
+      .sort((a, b) => b.score - a.score)
+      .slice(0, k)
+      .map(({ query, count }) => ({ query, count }));
   }
 
   // ---- internals ----
