@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "start": "tsx src/index.ts",
+    "test": "node --import tsx --test \"src/lib/**/*.test.ts\"",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "load": "tsx scripts/loadDataset.ts",
     "bench": "tsx scripts/benchmark.ts"
