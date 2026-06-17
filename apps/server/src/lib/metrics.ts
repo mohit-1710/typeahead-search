@@ -3,6 +3,8 @@
 export const counters = {
   cacheHits: 0,
   cacheMisses: 0,
+  dbWrites: 0, // rows written via batch flush
+  dbWriteBatches: 0, // flush round-trips to Postgres (the batching win)
 };
 
 export function recordHit(): void {
