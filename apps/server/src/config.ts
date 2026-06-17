@@ -34,6 +34,15 @@ export const config = {
   // distributed cache — one Redis per "node", routed by the hash ring
   cacheNodes: list("CACHE_NODES", "localhost:7001,localhost:7002,localhost:7003"),
 
+  cache: {
+    vnodes: int("CACHE_VNODES", 160),
+    // suggestion entries are a computed top-10; a short TTL bounds staleness
+    // with zero invalidation bookkeeping. jitter avoids synchronized expiry.
+    ttlSuggestSec: int("TTL_SUGGEST", 45),
+    ttlTrendSec: int("TTL_TREND", 8),
+    ttlJitter: num("TTL_JITTER", 0.2),
+  },
+
   ranking: {
     topK: int("TOP_K", 10),
     // hybrid = wPop * log1p(count) + wRec * recency
