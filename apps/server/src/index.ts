@@ -1,12 +1,41 @@
-import Fastify from "fastify";
 import cors from "@fastify/cors";
+import Fastify from "fastify";
 import { config } from "./config";
+import type { AppContext } from "./context";
+import { CacheCluster } from "./lib/cache";
+import { Store } from "./lib/store";
+import { CompletionTrie } from "./lib/trie";
+import { registerSuggest } from "./routes/suggest";
 
 async function main(): Promise<void> {
   const app = Fastify({ logger: true });
   await app.register(cors, { origin: true });
 
-  app.get("/health", async () => ({ status: "ok", ts: Date.now() }));
+  const store = new Store();
+  const cache = new CacheCluster();
+  const trie = new CompletionTrie();
+
+  await store.initSchema();
+  await cache.connect();
+
+  app.log.info("building trie from postgres...");
+  trie.build(await store.loadAll());
+  app.log.info(`trie ready: ${trie.size()} queries across ${config.cacheNodes.length} cache nodes`);
+
+  const ctx: AppContext = { trie, cache, store };
+
+  app.get("/health", async () => ({ status: "ok", trieSize: trie.size() }));
+  registerSuggest(app, ctx);
+
+  const shutdown = async (): Promise<void> => {
+    app.log.info("shutting down...");
+    await app.close();
+    await cache.close();
+    await store.close();
+    process.exit(0);
+  };
+  process.on("SIGINT", shutdown);
+  process.on("SIGTERM", shutdown);
 
   await app.listen({ port: config.port, host: config.host });
 }

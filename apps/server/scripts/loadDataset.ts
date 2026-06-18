@@ -15,6 +15,7 @@
 import { createReadStream } from "node:fs";
 import { createInterface } from "node:readline";
 import { parseArgs } from "node:util";
+import { murmur3 } from "../src/lib/hashRing";
 import { Store } from "../src/lib/store";
 
 const MAX_LEN = 120;
@@ -63,20 +64,29 @@ const QUALIFIERS = [
 ];
 const TAILS = ["", "free", "uk", "cheap", "pro", "deal", "today", "fast"];
 
-function zipf(rank: number): number {
-  return Math.max(1, Math.floor(2_000_000 / Math.pow(rank, 1.03)));
+/**
+ * A query's popularity. Heavy-tailed (Zipf-like) so a few queries dominate —
+ * that skew is what gives the cache a high hit rate. Derived from a hash so it's
+ * deterministic and spread across the range (no ties from generation order), and
+ * biased toward fewer-word queries since head terms are the short, common ones.
+ */
+function popularity(query: string): number {
+  const words = query.split(" ").length;
+  const h = murmur3(query) / 0xffffffff; // deterministic 0..1
+  const tail = Math.pow(1 - h, 6); // most queries small, a few very large
+  const simplicity = 1 / Math.pow(words, 1.8); // short head queries rank higher
+  return Math.max(1, Math.floor(6_000_000 * tail * simplicity));
 }
 
 function synthetic(n: number): Array<[string, number]> {
   const out = new Map<string, number>();
-  let rank = 1;
   for (const p of PREFIXES) {
     for (const t of TOPICS) {
       for (const qf of QUALIFIERS) {
         for (const tl of TAILS) {
           const q = normalize([p, t, qf, tl].filter(Boolean).join(" "));
           if (q && !out.has(q)) {
-            out.set(q, zipf(rank++));
+            out.set(q, popularity(q));
             if (out.size >= n) return [...out];
           }
         }
@@ -88,7 +98,7 @@ function synthetic(n: number): Array<[string, number]> {
   while (out.size < n) {
     const t = TOPICS[i % TOPICS.length]!;
     const q = normalize(`${t} ${Math.floor(i / TOPICS.length)}`);
-    if (!out.has(q)) out.set(q, zipf(rank++));
+    if (!out.has(q)) out.set(q, popularity(q));
     i++;
   }
   return [...out];
