@@ -43,6 +43,14 @@ export const config = {
     ttlJitter: num("TTL_JITTER", 0.2),
   },
 
+  buffer: {
+    // flush when the WAL reaches this many entries, or every interval, whichever
+    // comes first. coalescing happens at drain time.
+    batchSize: int("BATCH_SIZE_N", 500),
+    flushIntervalMs: int("FLUSH_INTERVAL_MS", 1000),
+    walKey: str("WAL_KEY", "wal:searches"),
+  },
+
   ranking: {
     topK: int("TOP_K", 10),
     // hybrid = wPop * log1p(count) + wRec * recency
