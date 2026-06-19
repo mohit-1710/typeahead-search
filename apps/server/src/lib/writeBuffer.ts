@@ -20,6 +20,7 @@ import { config } from "../config";
 import type { CacheCluster } from "./cache";
 import { counters } from "./metrics";
 import type { Store } from "./store";
+import type { Trending } from "./trending";
 import type { CompletionTrie } from "./trie";
 
 export function coalesce(batch: string[]): Map<string, number> {
@@ -32,6 +33,7 @@ export interface BufferDeps {
   cache: CacheCluster;
   store: Store;
   trie: CompletionTrie;
+  trending: Trending;
 }
 
 export class WriteBuffer {
@@ -73,6 +75,7 @@ export class WriteBuffer {
         const window = coalesce(batch);
         await this.deps.store.batchUpsert(window); // durable, additive
         this.deps.trie.applyIncrements(window); // keep the live index in sync
+        await this.deps.trending.bumpMany(window); // feed the leaderboard
         await client.ltrim(this.key, batch.length, -1); // drop what we processed
 
         if (batch.length < config.buffer.batchSize) break; // log drained

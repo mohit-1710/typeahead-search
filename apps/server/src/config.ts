@@ -59,4 +59,9 @@ export const config = {
     // recency score halves after this many seconds of silence
     halfLifeSec: num("DECAY_HALFLIFE_SEC", 1800),
   },
+
+  trending: {
+    // how often the leaderboard ages its scores (same half-life as ranking)
+    decayIntervalMs: int("TREND_DECAY_INTERVAL_MS", 30000),
+  },
 };
