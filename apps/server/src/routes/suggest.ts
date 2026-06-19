@@ -9,6 +9,7 @@
 import type { FastifyInstance } from "fastify";
 import { config } from "../config";
 import type { AppContext } from "../context";
+import { recordLatency } from "../lib/metrics";
 import type { Mode } from "../types";
 
 function asMode(value: unknown): Mode {
@@ -38,13 +39,8 @@ export function registerSuggest(app: FastifyInstance, ctx: AppContext): void {
       source = "trie";
     }
 
-    return {
-      prefix,
-      mode,
-      source,
-      node,
-      suggestions,
-      tookMs: Number((performance.now() - started).toFixed(3)),
-    };
+    const tookMs = performance.now() - started;
+    recordLatency(tookMs);
+    return { prefix, mode, source, node, suggestions, tookMs: Number(tookMs.toFixed(3)) };
   });
 }

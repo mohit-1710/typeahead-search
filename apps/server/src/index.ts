@@ -7,6 +7,8 @@ import { Store } from "./lib/store";
 import { Trending } from "./lib/trending";
 import { CompletionTrie } from "./lib/trie";
 import { WriteBuffer } from "./lib/writeBuffer";
+import { registerCache } from "./routes/cache";
+import { registerMetrics } from "./routes/metrics";
 import { registerSearch } from "./routes/search";
 import { registerSuggest } from "./routes/suggest";
 import { registerTrending } from "./routes/trending";
@@ -36,6 +38,8 @@ async function main(): Promise<void> {
   registerSuggest(app, ctx);
   registerSearch(app, buffer);
   registerTrending(app, trending);
+  registerMetrics(app, ctx, buffer);
+  registerCache(app, ctx);
 
   const shutdown = async (): Promise<void> => {
     app.log.info("shutting down...");
