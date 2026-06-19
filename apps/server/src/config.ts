@@ -44,9 +44,10 @@ export const config = {
   },
 
   buffer: {
-    // flush when the WAL reaches this many entries, or every interval, whichever
-    // comes first. coalescing happens at drain time.
-    batchSize: int("BATCH_SIZE_N", 500),
+    // entries drained per chunk. bigger chunk = more duplicates coalesced per
+    // UPSERT (fewer rows + fewer transactions), at the cost of a larger window
+    // held in memory while flushing. 2000 was the sweet spot in benchmarking.
+    batchSize: int("BATCH_SIZE_N", 2000),
     flushIntervalMs: int("FLUSH_INTERVAL_MS", 1000),
     walKey: str("WAL_KEY", "wal:searches"),
   },
