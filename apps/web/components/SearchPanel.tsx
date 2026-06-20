@@ -27,6 +27,8 @@ export function SearchPanel({ onActivity }: { onActivity?: () => void }) {
   const debounced = useDebouncedValue(text, 110);
   const wrapRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
+  // the query we just submitted — keeps a late debounce from re-opening the menu
+  const submittedRef = useRef<string | null>(null);
 
   // debounced suggestion fetch — one in-flight request, older ones aborted
   useEffect(() => {
@@ -43,7 +45,7 @@ export function SearchPanel({ onActivity }: { onActivity?: () => void }) {
     fetchSuggest(q, mode, ctrl.signal)
       .then((r) => {
         setResp(r);
-        setOpen(r.suggestions.length > 0);
+        setOpen(r.suggestions.length > 0 && submittedRef.current !== q);
         setActive(-1);
         setError(null);
       })
@@ -67,6 +69,7 @@ export function SearchPanel({ onActivity }: { onActivity?: () => void }) {
   async function submit(query: string) {
     const q = query.trim();
     if (!q) return;
+    submittedRef.current = q;
     setText(q);
     setOpen(false);
     setActive(-1);
@@ -98,7 +101,10 @@ export function SearchPanel({ onActivity }: { onActivity?: () => void }) {
           <SearchIcon />
           <input
             value={text}
-            onChange={(e) => setText(e.target.value)}
+            onChange={(e) => {
+              submittedRef.current = null; // typing again — allow the menu to open
+              setText(e.target.value);
+            }}
             onKeyDown={onKeyDown}
             onFocus={() => setOpen(suggestions.length > 0)}
             placeholder="Search 150k queries…"

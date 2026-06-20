@@ -1,7 +1,10 @@
 "use client";
 
 import { motion } from "motion/react";
+import { useState } from "react";
+import { MetricsBar } from "@/components/MetricsBar";
 import { SearchPanel } from "@/components/SearchPanel";
+import { TrendingPanel } from "@/components/TrendingPanel";
 
 const fade = (delay: number) => ({
   initial: { opacity: 0, y: 14 },
@@ -10,6 +13,9 @@ const fade = (delay: number) => ({
 });
 
 export default function Page() {
+  // bumped on every submitted search so the panels refresh immediately
+  const [refreshKey, setRefreshKey] = useState(0);
+
   return (
     <main className="page">
       <div className="frame">
@@ -30,8 +36,18 @@ export default function Page() {
         <hr className="rule" />
 
         <motion.div {...fade(0.18)}>
-          <SearchPanel />
+          <SearchPanel onActivity={() => setRefreshKey((k) => k + 1)} />
         </motion.div>
+
+        <motion.div className="two-col" {...fade(0.24)}>
+          <MetricsBar refreshKey={refreshKey} />
+          <TrendingPanel refreshKey={refreshKey} />
+        </motion.div>
+
+        <footer className="footer">
+          <span>trie · consistent-hash cache · write-back batching</span>
+          <span>fastify · redis ×3 · postgres</span>
+        </footer>
       </div>
     </main>
   );
