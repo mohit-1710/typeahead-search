@@ -43,18 +43,24 @@ export class WriteBuffer {
 
   constructor(private readonly deps: BufferDeps) {}
 
-  /** Append-and-ack. One Redis RPUSH, routed by the ring like every other key. */
+  /** Append-and-ack. One Redis RPUSH, routed by the ring like every other key.
+   *  RPUSH returns the new depth — if we've hit the batch size, kick a drain now
+   *  instead of waiting for the interval (flush on size OR interval). */
   async record(query: string): Promise<void> {
     const q = query.toLowerCase().trim();
     if (!q) return;
     counters.searchesReceived++;
-    await this.deps.cache.clientFor(this.key).rpush(this.key, q);
+    const depth = await this.deps.cache.clientFor(this.key).rpush(this.key, q);
+    if (depth >= config.buffer.batchSize) this.kickDrain();
   }
 
   start(): void {
-    this.timer = setInterval(() => {
-      void this.drain();
-    }, config.buffer.flushIntervalMs);
+    this.timer = setInterval(() => this.kickDrain(), config.buffer.flushIntervalMs);
+  }
+
+  /** Fire-and-forget a drain without leaking an unhandled rejection. */
+  private kickDrain(): void {
+    this.drain().catch((err) => console.error("[writeBuffer] drain failed:", err));
   }
 
   async stop(): Promise<void> {

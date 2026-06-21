@@ -122,8 +122,9 @@ same time. `appendonly` is on so those no-TTL structures survive a restart.
 thing: append its query to a Redis list (the WAL) and return `Searched`. The
 count never touches Postgres on the request path.
 
-A background drainer then, on an interval, reads the log in chunks, **coalesces
-duplicates** into a single `query → count` map, applies **one additive UPSERT**
+A background drainer then — on an interval, **or** as soon as the log reaches the
+configurable batch size, whichever comes first — reads the log in chunks,
+**coalesces duplicates** into a single `query → count` map, applies **one additive UPSERT**
 to Postgres (`count = count + EXCLUDED.count`, so racing flushes add instead of
 clobbering), applies the same increments to the live trie and the trending set,
 and trims the log.
