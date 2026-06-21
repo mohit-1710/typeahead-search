@@ -28,6 +28,9 @@ export class CacheCluster {
   private ring: HashRing;
 
   constructor() {
+    if (config.cacheNodes.length === 0) {
+      throw new Error("no cache nodes configured — set CACHE_NODES in .env");
+    }
     this.ring = new HashRing(config.cache.vnodes);
     for (const node of config.cacheNodes) {
       const [host = "localhost", portStr = "6379"] = node.split(":");
