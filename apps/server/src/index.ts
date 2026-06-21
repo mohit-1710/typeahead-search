@@ -1,5 +1,5 @@
 import cors from "@fastify/cors";
-import Fastify from "fastify";
+import Fastify, { type FastifyInstance } from "fastify";
 import { config } from "./config";
 import type { AppContext } from "./context";
 import { CacheCluster } from "./lib/cache";
@@ -13,6 +13,26 @@ import { registerSearch } from "./routes/search";
 import { registerSuggest } from "./routes/suggest";
 import { registerTrending } from "./routes/trending";
 
+/** Retry `fn` until it succeeds — so `docker compose up` and `start` can race. */
+async function waitFor(
+  app: FastifyInstance,
+  label: string,
+  fn: () => Promise<void>,
+  attempts = 30,
+  delayMs = 1000,
+): Promise<void> {
+  for (let attempt = 1; ; attempt++) {
+    try {
+      await fn();
+      return;
+    } catch (err) {
+      if (attempt >= attempts) throw err;
+      app.log.warn(`${label} not ready (attempt ${attempt}/${attempts}) — retrying in ${delayMs}ms`);
+      await new Promise((r) => setTimeout(r, delayMs));
+    }
+  }
+}
+
 async function main(): Promise<void> {
   const app = Fastify({ logger: true });
   await app.register(cors, { origin: true });
@@ -21,8 +41,8 @@ async function main(): Promise<void> {
   const cache = new CacheCluster();
   const trie = new CompletionTrie();
 
-  await store.initSchema();
-  await cache.connect();
+  await waitFor(app, "postgres", () => store.initSchema());
+  await waitFor(app, "redis", () => cache.ready());
 
   app.log.info("building trie from postgres...");
   trie.build(await store.loadAll());

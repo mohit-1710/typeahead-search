@@ -42,8 +42,9 @@ export class CacheCluster {
     }
   }
 
-  async connect(): Promise<void> {
-    await Promise.all([...this.clients.values()].map((c) => c.connect()));
+  /** Connect (lazily) and confirm every node answers. Safe to call again on retry. */
+  async ready(): Promise<void> {
+    await Promise.all([...this.clients.values()].map((c) => c.ping()));
   }
 
   async close(): Promise<void> {
