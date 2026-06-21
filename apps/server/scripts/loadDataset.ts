@@ -6,7 +6,7 @@
  *   pnpm load --file log.csv       # aggregate a real query log into counts
  *   pnpm load --file log.csv --top 1000000 --min-count 2
  *
- * The assignment wants >=100k queries with counts. Real search traffic is Zipf
+ * We want a large dataset, at least 100k queries with counts. Real search traffic is Zipf
  * (a few queries dominate), which is exactly what makes the cache hit rate high,
  * so the synthetic generator reproduces that distribution rather than a flat one.
  * --file aggregates a real log by COUNT(*) per normalized query, the same
@@ -150,7 +150,7 @@ async function main(): Promise<void> {
 
   console.log(`${rows.length.toLocaleString()} distinct queries to load`);
   if (rows.length < 100_000) {
-    console.warn(`WARNING: ${rows.length.toLocaleString()} queries (< 100k assignment minimum)`);
+    console.warn(`WARNING: ${rows.length.toLocaleString()} queries (< 100k, the minimum we aim for)`);
   }
 
   const store = new Store();

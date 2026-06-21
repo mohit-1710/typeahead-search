@@ -1,7 +1,7 @@
 # Local infra: one Postgres (source of truth) + three Redis nodes (the
 # distributed cache). The app routes cache keys across the three by consistent
 # hashing — they are independent servers, not a Redis Cluster, so the routing
-# logic lives in our code where the assignment wants it.
+# logic lives in our own code.
 #
 # Eviction is volatile-lru: only keys with a TTL (the suggestion cache) can be
 # evicted. The write-ahead list and the trending sorted set carry no TTL, so

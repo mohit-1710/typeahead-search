@@ -1,5 +1,5 @@
 /**
- * Drives the running server and reports the numbers the assignment asks for:
+ * Drives the running server and reports the numbers that matter for this service:
  * read latency (p50/p95/p99), cache hit rate, and write reduction from batching.
  *
  *   pnpm bench                              # 8k reads, 20k writes
