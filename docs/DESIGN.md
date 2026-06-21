@@ -130,7 +130,7 @@ and trims the log.
 
 Two wins from one structure:
 - **Batching.** Thousands of searches collapse into a handful of DB writes —
-  measured ~7.5× fewer rows and ~1800× fewer transactions (PERFORMANCE.md).
+  measured ~7.6× fewer rows and ~1800× fewer transactions (PERFORMANCE.md).
 - **Durability.** Because the buffer lives in Redis (appendonly), an un-drained
   window **survives a crash** — the drainer just replays it on restart.
 

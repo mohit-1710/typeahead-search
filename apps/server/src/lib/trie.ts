@@ -6,9 +6,11 @@
  * (O(prefix length)) and read the node's pool — there is no subtree DFS on the
  * read path. That is the whole point: keystrokes are reads, reads must be cheap.
  *
- * Maintaining those pools is affordable because search counts only ever go *up*.
- * When a query's count rises we walk its own prefix path and bubble it into each
- * ancestor's pool; a query already on top can only stay or climb. The pool keeps
+ * Maintaining those pools is affordable because, within a running process, search
+ * counts only ever go *up* (a restart rebuilds the whole trie from Postgres, so
+ * the invariant resets cleanly). When a query's count rises we walk its own prefix
+ * path and bubble it into each ancestor's pool; a query already on top can only
+ * stay or climb. The pool keeps
  * a few more than we serve (POOL >= TOP_K) so a later re-rank has spare
  * candidates without re-walking the tree.
  *
