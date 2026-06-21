@@ -97,7 +97,7 @@ sequenceDiagram
 Full reasoning — every decision and the alternatives I rejected — is in
 **[docs/DESIGN.md](docs/DESIGN.md)**. Benchmark numbers in
 **[docs/PERFORMANCE.md](docs/PERFORMANCE.md)**. A one-page write-up of all of it
-is in **[docs/Project-Report.pdf](docs/Project-Report.pdf)**.
+is in **[docs/REPORT.pdf](docs/REPORT.pdf)**.
 
 ---
 
@@ -209,7 +209,7 @@ apps/
     src/routes/                 suggest · search · trending · cache · metrics
     scripts/                    loadDataset · benchmark
   web/                          Next.js UI
-docs/                           DESIGN.md · PERFORMANCE.md
+docs/                           DESIGN.md · PERFORMANCE.md · REPORT.pdf
 docker-compose.yml              postgres + 3 redis (volatile-lru, appendonly)
 ```
 
