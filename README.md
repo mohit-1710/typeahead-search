@@ -96,7 +96,8 @@ sequenceDiagram
 
 Full reasoning — every decision and the alternatives I rejected — is in
 **[docs/DESIGN.md](docs/DESIGN.md)**. Benchmark numbers in
-**[docs/PERFORMANCE.md](docs/PERFORMANCE.md)**.
+**[docs/PERFORMANCE.md](docs/PERFORMANCE.md)**. A one-page write-up of all of it
+is in **[docs/Project-Report.pdf](docs/Project-Report.pdf)**.
 
 ---
 
